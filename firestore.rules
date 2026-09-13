@@ -1,0 +1,138 @@
+rules_version = '2';
+
+// ---------------------------------------------------------------------------
+// SPSMKN2 — Firestore security rules
+//
+// Trust model: the ONLY trusted role signal is the `role` custom claim on
+// the caller's Firebase Auth ID token (request.auth.token.role), set by an
+// Admin-SDK-privileged process (see scripts/seed.ts / future admin API
+// routes) when an account is created. A `role` field inside a Firestore
+// document is never trusted for authorization decisions — only for display.
+//
+// Almost every collection here is written server-side (via API routes using
+// firebase-admin, which bypasses these rules) so that workflow invariants
+// (status transitions, disposisi, audit logging) are enforced in one place.
+// Client writes are only allowed where a role is safely allowed to write
+// directly (e.g. a siswa creating their own complaint draft, or updating
+// their own profile fields).
+// ---------------------------------------------------------------------------
+
+function isSignedIn() {
+  return request.auth != null;
+}
+
+function role() {
+  return request.auth.token.role;
+}
+
+function isAdmin() {
+  return isSignedIn() && role() == 'admin';
+}
+
+function isPetugas() {
+  return isSignedIn() && role() == 'petugas';
+}
+
+function isSiswa() {
+  return isSignedIn() && role() == 'siswa';
+}
+
+function isOwner(uid) {
+  return isSignedIn() && request.auth.uid == uid;
+}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // users/{uid} — profile documents. Role itself lives in custom claims;
+    // this mirror is for display and is never trusted for auth decisions.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin() ||
+        (isPetugas() && resource.data.role == 'siswa');
+      allow update: if isOwner(uid) &&
+        // a user may only touch their own display fields, never role/isActive
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'isActive', 'nis', 'unitId']);
+      allow create, delete: if false; // account lifecycle is server-only
+    }
+
+    // usernames/{username} -> { email } lookup used by the login page.
+    // Readable by anyone attempting to sign in, never writable by clients.
+    match /usernames/{username} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /units/{unitId} {
+      allow read: if isSignedIn();
+      allow write: if false; // admin-only, via server action
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow write: if false; // admin-only, via server action
+    }
+
+    match /complaints/{complaintId} {
+      allow read: if isAdmin() ||
+        isOwner(resource.data.studentUid) ||
+        (isPetugas() && resource.data.currentUnitId == request.auth.token.unitId);
+
+      // Creation also goes through a server action (POST /api/complaints)
+      // rather than a direct client write, so the complaint number,
+      // initial history entry, and notifications are always created
+      // together and never drift apart.
+      allow create, update, delete: if false;
+
+      match /assignments/{assignmentId} {
+        allow read: if isAdmin() ||
+          isOwner(get(/databases/$(database)/documents/complaints/$(complaintId)).data.studentUid) ||
+          (isPetugas() && resource.data.toUserId == request.auth.uid);
+        allow write: if false;
+      }
+
+      match /history/{entryId} {
+        allow read: if isAdmin() ||
+          isOwner(get(/databases/$(database)/documents/complaints/$(complaintId)).data.studentUid) ||
+          isPetugas();
+        allow write: if false; // immutable, server-written only
+      }
+
+      match /comments/{commentId} {
+        allow read: if isAdmin() ||
+          (isPetugas()) ||
+          (isSiswa() && resource.data.visibility == 'pelapor' &&
+            isOwner(get(/databases/$(database)/documents/complaints/$(complaintId)).data.studentUid));
+        allow write: if false;
+      }
+
+      match /escalations/{escalationId} {
+        allow read: if isAdmin() || isPetugas();
+        allow write: if false; // server-written only, from petugas escalate action
+      }
+    }
+
+    match /notifications/{notifId} {
+      allow read, update: if isOwner(resource.data.userId);
+      allow create, delete: if false;
+    }
+
+    // Audit log: append-only, server-written, never client-writable, and
+    // readable only by admins.
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // Internal bookkeeping collections — never touched by any client,
+    // only by the Admin SDK (complaint numbering, per-user rate limits).
+    match /counters/{counterId} {
+      allow read, write: if false;
+    }
+    match /rate_limits/{limitId} {
+      allow read, write: if false;
+    }
+
+    // Everything else is denied by default (no matching rule = no access).
+  }
+}

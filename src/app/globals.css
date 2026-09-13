@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  SPSMKN2 design tokens — v2, matched to the reference UI:
+  warm cream page background, dark navy ink, teal as the "trusted system"
+  accent, and a gold/amber CTA reserved for the one primary action per
+  screen ("+ Buat pengaduan baru", "Kirim pengaduan"). Status pills use
+  distinct hues per state (amber/coral/mint/violet) rather than one accent
+  color, so status is readable at a glance in a list.
+*/
+:root {
+  --bg: 42 38% 95%;
+  --surface: 0 0% 100%;
+  --ink: 222 35% 14%;
+  --ink-muted: 220 12% 42%;
+  --border: 40 20% 87%;
+
+  --brand: 168 68% 26%;
+  --brand-strong: 168 72% 16%;
+  --brand-soft: 160 45% 92%;
+
+  --cta: 42 88% 58%;
+  --cta-strong: 38 82% 50%;
+  --cta-ink: 222 35% 14%;
+
+  --priority-low: 142 45% 40%;
+  --priority-normal: 210 60% 46%;
+  --priority-high: 28 80% 48%;
+  --priority-urgent: 4 72% 46%;
+
+  --danger: 4 72% 46%;
+  --warning: 32 85% 45%;
+  --success: 152 45% 32%;
+
+  --status-diajukan-bg: 220 14% 93%;
+  --status-diajukan-text: 220 14% 40%;
+  --status-progress-bg: 32 90% 90%;
+  --status-progress-text: 28 75% 38%;
+  --status-waiting-bg: 14 85% 92%;
+  --status-waiting-text: 10 70% 45%;
+  --status-info-bg: 258 45% 93%;
+  --status-info-text: 258 35% 45%;
+  --status-success-bg: 152 45% 91%;
+  --status-success-text: 152 45% 28%;
+  --status-danger-bg: 4 72% 93%;
+  --status-danger-text: 4 60% 42%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: hsl(var(--bg));
+  color: hsl(var(--ink));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--brand));
+  outline-offset: 2px;
+  border-radius: 6px;
+}
