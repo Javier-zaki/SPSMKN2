@@ -1,0 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  SPSMKN2 design tokens — v3 "navy/teal/saffron", final direction.
+  Deep navy for the sidebar and structural chrome (identity, gravitas),
+  teal for the system's "trusted/active" accent, saffron reserved for the
+  one primary action and priority signals, warm off-white instead of flat
+  white so the page never reads like a bare admin panel. Eleven distinct
+  status hues (not grouped) per the brief — status must be scannable at a
+  glance across a long list.
+*/
+:root {
+  --bg: 48 22% 96%;
+  --surface: 0 0% 100%;
+  --ink: 222 35% 14%;
+  --ink-muted: 210 12% 45%;
+  --border: 40 14% 89%;
+
+  --navy: 209 41% 16%;
+  --navy-soft: 209 30% 24%;
+
+  --brand: 178 33% 31%;
+  --brand-strong: 178 45% 20%;
+  --brand-soft: 160 45% 92%;
+
+  --cta: 40 85% 63%;
+  --cta-strong: 36 78% 54%;
+  --cta-ink: 222 35% 14%;
+
+  --priority-low: 142 40% 42%;
+  --priority-normal: 210 55% 48%;
+  --priority-high: 40 85% 55%;
+  --priority-urgent: 8 74% 60%;
+
+  --danger: 4 65% 60%;
+  --warning: 8 74% 69%;
+  --success: 142 40% 34%;
+
+  /* Status pills — 11 distinct states, matched to the brief's palette */
+  --status-diajukan-bg: 210 16% 93%;
+  --status-diajukan-text: 210 16% 38%;
+  --status-diverifikasi-bg: 210 70% 93%;
+  --status-diverifikasi-text: 210 60% 38%;
+  --status-diteruskan-bg: 178 33% 90%;
+  --status-diteruskan-text: 178 45% 24%;
+  --status-diterima-bg: 165 40% 90%;
+  --status-diterima-text: 165 45% 26%;
+  --status-ditangani-bg: 40 85% 88%;
+  --status-ditangani-text: 32 60% 32%;
+  --status-menunggu-bg: 24 80% 92%;
+  --status-menunggu-text: 20 65% 40%;
+  --status-selesai-bg: 142 40% 90%;
+  --status-selesai-text: 142 40% 26%;
+  --status-ditolak-bg: 4 65% 93%;
+  --status-ditolak-text: 4 55% 44%;
+  --status-dikembalikan-bg: 8 74% 92%;
+  --status-dikembalikan-text: 8 60% 44%;
+  --status-dieskalasikan-bg: 265 40% 93%;
+  --status-dieskalasikan-text: 265 35% 44%;
+  --status-ditunda-bg: 220 8% 92%;
+  --status-ditunda-text: 220 8% 40%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: hsl(var(--bg));
+  /* Very subtle dot texture so the page never reads as flat white —
+     barely perceptible, just enough to avoid a sterile admin-panel feel. */
+  background-image: radial-gradient(hsl(var(--ink) / 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: hsl(var(--ink));
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(var(--brand));
+  outline-offset: 2px;
+  border-radius: 6px;
+}

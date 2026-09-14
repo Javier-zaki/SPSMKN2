@@ -1,0 +1,3 @@
+role,username,email,name,password,nis,className,unitId,position
+siswa,10203040,siswa1@example.com,Andi Wijaya,Password123,10203040,XI RPL,,
+petugas,petugas1,petugas1@example.com,Bu Sari,Password123,, ,sarpras,Kepala Unit
