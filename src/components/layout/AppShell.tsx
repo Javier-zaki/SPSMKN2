@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
@@ -128,9 +129,13 @@ export function AppShell({
       {/* Desktop sidebar — navy, part of the identity, not a generic admin menu */}
       <aside className="hidden w-64 shrink-0 bg-navy md:flex md:flex-col">
         <div className="flex items-center gap-2 px-6 py-6">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">
-            S2
-          </span>
+          <Image
+            src="/pp.jpeg"
+            alt="Logo SPSMKN2"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg object-cover"
+          />
           <span className="font-display text-base font-bold text-white">
             SPSMKN2
           </span>
