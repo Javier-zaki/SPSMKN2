@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -124,6 +124,24 @@ export function AppShell({
   const { profile } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
+
   return (
     <div className="min-h-screen bg-bg md:flex">
       {/* Desktop sidebar — navy, part of the identity, not a generic admin menu */}
@@ -167,7 +185,9 @@ export function AppShell({
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Buka menu"
-              className="focus-ring text-navy md:hidden"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
+              className="focus-ring -ml-2 rounded-lg p-2 text-navy md:hidden"
             >
               <Menu className="h-6 w-6" />
             </button>
@@ -195,11 +215,13 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="p-5 pb-20 md:p-8 md:pb-8">{children}</main>
+        <main className="p-5 pb-[calc(5rem_+_env(safe-area-inset-bottom))] md:p-8 md:pb-8">
+          {children}
+        </main>
       </div>
 
       {/* Mobile bottom nav — main actions stay thumb-reachable */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-border bg-surface md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
         {items.slice(0, 5).map((item) => (
           <BottomNavLink
             key={item.href}
@@ -211,13 +233,13 @@ export function AppShell({
 
       {/* Mobile slide-in menu — navy, matches the desktop sidebar's identity */}
       {menuOpen && (
-        <div className="fixed inset-0 z-20 md:hidden">
+        <div className="fixed inset-0 z-20 md:hidden" role="dialog" aria-modal="true" aria-label="Navigasi utama">
           <div
             className="absolute inset-0 bg-black/40 transition-opacity"
             onClick={() => setMenuOpen(false)}
             aria-hidden="true"
           />
-          <div className="absolute inset-y-0 left-0 w-64 bg-navy p-4 shadow-card transition-transform">
+          <div id="mobile-navigation" className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col overflow-y-auto bg-navy p-4 pb-[env(safe-area-inset-bottom)] shadow-card transition-transform">
             <div className="mb-6 flex items-center justify-between">
               <span className="font-display text-base font-bold text-white">
                 SPSMKN2
@@ -230,7 +252,7 @@ export function AppShell({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="space-y-1">
+            <nav className="flex-1 space-y-1">
               {items.map((item) => (
                 <div key={item.href} onClick={() => setMenuOpen(false)}>
                   <SidebarLink item={item} active={pathname === item.href} />

@@ -35,7 +35,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-0 backdrop-blur-[1px] sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-0 pb-[env(safe-area-inset-bottom)] backdrop-blur-[1px] sm:items-center sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -44,7 +44,7 @@ export function Modal({
       <div
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          "max-h-[90vh] w-full overflow-y-auto rounded-t-lg border border-border bg-surface p-5 shadow-card sm:rounded-lg",
+          "max-h-[90dvh] w-full overflow-y-auto rounded-t-lg border border-border bg-surface p-5 shadow-card sm:max-h-[90vh] sm:rounded-lg",
           widthClass
         )}
       >

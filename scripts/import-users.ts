@@ -179,6 +179,9 @@ async function main() {
 
       if (role === "siswa") {
         ensureRequired(row, ["role", "username", "email", "name", "password", "nis", "className"]);
+        if (!/^\d{3,30}$/.test(String(row.nis).trim())) {
+          throw new Error(`Baris ${index + 2}: NIS harus terdiri dari 3–30 angka.`);
+        }
         const usernameTaken = await adminDb.collection("usernames").doc(username).get();
         if (usernameTaken.exists) {
           console.log(`- Lewati baris ${index + 2}: username sudah dipakai (${username})`);

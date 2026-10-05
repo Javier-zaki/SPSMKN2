@@ -150,10 +150,18 @@ function AddStudentModal({
           <Label>Nama lengkap</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>NIS</Label>
-            <Input value={nis} onChange={(e) => setNis(e.target.value)} />
+            <Input
+              value={nis}
+              onChange={(e) => setNis(e.target.value.replace(/\D/g, "").slice(0, 30))}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={30}
+              autoComplete="off"
+              aria-label="NIS, angka saja"
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Kelas</Label>

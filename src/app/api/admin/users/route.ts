@@ -11,7 +11,7 @@ const bodySchema = z.discriminatedUnion("role", [
     email: z.string().email(),
     name: z.string().min(2).max(100),
     password: z.string().min(8),
-    nis: z.string().min(1).max(30),
+    nis: z.string().min(3).max(30).regex(/^\d+$/, "NIS harus berupa angka"),
     className: z.string().min(1).max(30),
   }),
   z.object({
