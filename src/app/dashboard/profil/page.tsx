@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import Image from "next/image";
 import { doc, updateDoc } from "firebase/firestore";
 import {
   EmailAuthProvider,
@@ -128,7 +129,7 @@ export default function ProfilPage() {
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border bg-brand-soft text-lg font-bold text-brand-strong">
               {student.photoURL ? (
-                <img src={student.photoURL} alt={student.name} className="h-full w-full object-cover" />
+                <Image src={student.photoURL} alt={student.name} width={64} height={64} className="h-full w-full object-cover" />
               ) : (
                 initials(student.name)
               )}

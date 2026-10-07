@@ -52,6 +52,8 @@ export default function NotifikasiPage() {
     }
     if (n.complaintId) {
       router.push(`/dashboard/pengaduan/${n.complaintId}`);
+    } else if (n.supportChatId) {
+      router.push("/dashboard/bantuan");
     }
   }
 

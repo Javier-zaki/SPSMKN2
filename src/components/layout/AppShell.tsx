@@ -13,6 +13,7 @@ import {
   FilePlus2,
   FileText,
   Bell,
+  MessageCircle,
   User,
   Users,
   Building2,
@@ -37,12 +38,14 @@ export const NAV_BY_ROLE: Record<"siswa" | "admin" | "petugas", NavItem[]> = {
     { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
     { href: "/dashboard/buat", label: "Buat Pengaduan", icon: FilePlus2 },
     { href: "/dashboard/pengaduan", label: "Pengaduan Saya", icon: FileText },
+    { href: "/dashboard/bantuan", label: "Chat Bantuan", icon: MessageCircle },
     { href: "/dashboard/notifikasi", label: "Notifikasi", icon: Bell },
     { href: "/dashboard/profil", label: "Profil", icon: User },
   ],
   admin: [
     { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
     { href: "/admin/pengaduan", label: "Pengaduan", icon: FileText },
+    { href: "/admin/chat", label: "Chat Bantuan", icon: MessageCircle },
     { href: "/admin/siswa", label: "Siswa", icon: Users },
     { href: "/admin/petugas", label: "Petugas", icon: Users },
     { href: "/admin/unit", label: "Unit", icon: Building2 },
@@ -53,6 +56,7 @@ export const NAV_BY_ROLE: Record<"siswa" | "admin" | "petugas", NavItem[]> = {
   petugas: [
     { href: "/petugas", label: "Dashboard", icon: LayoutDashboard },
     { href: "/petugas/tugas", label: "Tugas Saya", icon: ClipboardList },
+    { href: "/petugas/chat", label: "Chat Bantuan", icon: MessageCircle },
     { href: "/petugas/riwayat", label: "Riwayat", icon: History },
     { href: "/petugas/profil", label: "Profil", icon: User },
   ],
@@ -87,9 +91,11 @@ function Avatar({
 }) {
   if (photoURL) {
     return (
-      <img
+      <Image
         src={photoURL}
         alt={name ?? "Avatar pengguna"}
+        width={64}
+        height={64}
         className={cn(
           "h-full w-full rounded-full object-cover ring-2 ring-white/70",
           className

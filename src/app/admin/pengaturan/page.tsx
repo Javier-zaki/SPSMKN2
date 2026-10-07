@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type FormEvent } from "react";
+import Image from "next/image";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -108,7 +109,7 @@ export default function PengaturanPage() {
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-border bg-brand-soft text-lg font-bold text-brand-strong">
               {admin.photoURL ? (
-                <img src={admin.photoURL} alt={admin.name} className="h-full w-full object-cover" />
+                <Image src={admin.photoURL} alt={admin.name} width={64} height={64} className="h-full w-full object-cover" />
               ) : (
                 initials(admin.name)
               )}

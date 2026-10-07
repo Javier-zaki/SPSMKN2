@@ -117,6 +117,25 @@ service cloud.firestore {
       allow create, delete: if false;
     }
 
+    // Support conversations and messages are read live by their participants.
+    // All writes go through authenticated API routes using the Admin SDK.
+    match /support_chats/{chatId} {
+      allow read: if isAdmin() ||
+        (isSiswa() && resource.data.studentUid == request.auth.uid) ||
+        (isPetugas() && resource.data.assignedOfficerUid == request.auth.uid);
+      allow write: if false;
+
+      match /messages/{messageId} {
+        function chat() {
+          return get(/databases/$(database)/documents/support_chats/$(chatId)).data;
+        }
+        allow read: if isAdmin() ||
+          (isSiswa() && chat().studentUid == request.auth.uid) ||
+          (isPetugas() && chat().assignedOfficerUid == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
     // Audit log: append-only, server-written, never client-writable, and
     // readable only by admins.
     match /audit_logs/{logId} {

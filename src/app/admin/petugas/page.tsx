@@ -40,8 +40,11 @@ export default function PetugasPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     if (!q) return officers;
+    const unitNameById = new Map(units.map((unit) => [unit.id, unit.name]));
     return officers.filter(
-      (o) => o.name.toLowerCase().includes(q) || unitName(o.unitId).toLowerCase().includes(q)
+      (o) =>
+        o.name.toLowerCase().includes(q) ||
+        (unitNameById.get(o.unitId) ?? "-").toLowerCase().includes(q)
     );
   }, [officers, search, units]);
 

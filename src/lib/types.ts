@@ -158,7 +158,34 @@ export interface Notification {
   title: string;
   message: string;
   complaintId: string | null;
+  supportChatId?: string | null;
   isRead: boolean;
+  createdAt: string;
+}
+
+export type SupportChatStatus = "menunggu_admin" | "diteruskan" | "selesai";
+
+export interface SupportChat {
+  id: string;
+  studentUid: string;
+  studentName: string;
+  subject: string;
+  status: SupportChatStatus;
+  assignedUnitId: string | null;
+  assignedUnitName: string | null;
+  assignedOfficerUid: string | null;
+  assignedOfficerName: string | null;
+  lastMessage: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupportMessage {
+  id: string;
+  authorUid: string;
+  authorRole: Role;
+  authorName: string;
+  message: string;
   createdAt: string;
 }
 

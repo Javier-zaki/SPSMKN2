@@ -65,19 +65,21 @@ export default function SiswaOverviewPage() {
     return active.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] ?? null;
   }, [complaints]);
 
+  const featuredId = featured?.id;
+
   useEffect(() => {
-    if (!featured) {
+    if (!featuredId) {
       setHistory([]);
       return;
     }
     const q = query(
-      collection(db, "complaints", featured.id, "history"),
+      collection(db, "complaints", featuredId, "history"),
       orderBy("createdAt", "asc")
     );
     return onSnapshot(q, (snap) => {
       setHistory(snap.docs.map((d) => ({ ...(d.data() as ComplaintHistoryEntry), id: d.id })));
     });
-  }, [featured?.id]);
+  }, [featuredId]);
 
   const stats = useMemo(
     () => ({
