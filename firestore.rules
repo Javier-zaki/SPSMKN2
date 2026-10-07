@@ -106,6 +106,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Internal realtime conversation between the admin and the currently
+      // assigned petugas. Message writes go through the authenticated API.
+      match /chat_messages/{messageId} {
+        allow read: if isAdmin() ||
+          (isPetugas() &&
+            get(/databases/$(database)/documents/complaints/$(complaintId)).data.currentOfficerId == request.auth.uid);
+        allow write: if false;
+      }
+
       match /escalations/{escalationId} {
         allow read: if isAdmin() || isPetugas();
         allow write: if false; // server-written only, from petugas escalate action

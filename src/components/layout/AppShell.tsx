@@ -56,6 +56,7 @@ export const NAV_BY_ROLE: Record<"siswa" | "admin" | "petugas", NavItem[]> = {
   petugas: [
     { href: "/petugas", label: "Dashboard", icon: LayoutDashboard },
     { href: "/petugas/tugas", label: "Tugas Saya", icon: ClipboardList },
+    { href: "/petugas/notifikasi", label: "Notifikasi", icon: Bell },
     { href: "/petugas/chat", label: "Chat Bantuan", icon: MessageCircle },
     { href: "/petugas/riwayat", label: "Riwayat", icon: History },
     { href: "/petugas/profil", label: "Profil", icon: User },
@@ -65,7 +66,7 @@ export const NAV_BY_ROLE: Record<"siswa" | "admin" | "petugas", NavItem[]> = {
 const NOTIF_HREF: Record<"siswa" | "admin" | "petugas", string> = {
   siswa: "/dashboard/notifikasi",
   admin: "/admin",
-  petugas: "/petugas",
+  petugas: "/petugas/notifikasi",
 };
 
 const PROFILE_HREF: Record<"siswa" | "admin" | "petugas", string> = {
