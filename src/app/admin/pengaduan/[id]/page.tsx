@@ -42,6 +42,7 @@ export default function AdminComplaintDetailPage() {
   const [history, setHistory] = useState<ComplaintHistoryEntry[]>([]);
   const [comments, setComments] = useState<ComplaintComment[]>([]);
   const [studentName, setStudentName] = useState<string | null>(null);
+  const [internalChatId, setInternalChatId] = useState<string | null>(null);
 
   const [showVerify, setShowVerify] = useState<null | "approve" | "reject">(null);
   const [showForward, setShowForward] = useState(false);
@@ -82,6 +83,23 @@ export default function AdminComplaintDetailPage() {
     });
     return () => unsub();
   }, [complaint, profile]);
+
+  useEffect(() => {
+    if (complaint === null || complaint === "not-found" || !complaint.currentOfficerId) {
+      setInternalChatId(null);
+      return;
+    }
+
+    const q = query(
+      collection(db, "support_chats"),
+      where("complaintId", "==", id),
+      where("assignedOfficerUid", "==", complaint.currentOfficerId)
+    );
+
+    return onSnapshot(q, (snap) => {
+      setInternalChatId(snap.docs[0]?.id ?? null);
+    });
+  }, [complaint, id]);
 
   if (complaint === null) return <p className="text-sm text-ink-muted">Memuat...</p>;
   if (complaint === "not-found") {
@@ -202,6 +220,11 @@ export default function AdminComplaintDetailPage() {
           )}
           {["diverifikasi", "dikembalikan", "dieskalasikan"].includes(complaint.status) && (
             <Button onClick={() => setShowForward(true)}>Teruskan Laporan</Button>
+          )}
+          {internalChatId && (
+            <Button variant="secondary" onClick={() => router.push(`/admin/chat?chatId=${internalChatId}`)}>
+              Chat dengan petugas
+            </Button>
           )}
           {!["ditolak", "selesai"].includes(complaint.status) && (
             <>
@@ -433,6 +456,7 @@ function ForwardModal({
 }) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [officers, setOfficers] = useState<OfficerUser[]>([]);
+  const [officerWorkloads, setOfficerWorkloads] = useState<Record<string, number>>({});
   const [unitId, setUnitId] = useState("");
   const [officerUid, setOfficerUid] = useState("");
   const [priority, setPriority] = useState<ComplaintPriority>("normal");
@@ -447,6 +471,7 @@ function ForwardModal({
   useEffect(() => {
     if (!unitId) {
       setOfficers([]);
+      setOfficerWorkloads({});
       return;
     }
     const q = query(
@@ -457,6 +482,35 @@ function ForwardModal({
     );
     return onSnapshot(q, (snap) => setOfficers(snap.docs.map((d) => d.data() as OfficerUser)));
   }, [unitId]);
+
+  useEffect(() => {
+    if (officers.length === 0) {
+      setOfficerWorkloads({});
+      return;
+    }
+
+    const unsubscribers = officers.map((officer) =>
+      onSnapshot(
+        query(
+          collection(db, "complaints"),
+          where("currentOfficerId", "==", officer.uid)
+        ),
+        (snap) => {
+          setOfficerWorkloads((current) => ({
+            ...current,
+            [officer.uid]: snap.docs.filter((d) => {
+              const status = (d.data() as { status?: string }).status;
+              return ["diteruskan", "diterima_petugas", "sedang_ditangani", "menunggu_konfirmasi"].includes(status ?? "");
+            }).length,
+          }));
+        }
+      )
+    );
+
+    return () => {
+      unsubscribers.forEach((unsub) => unsub());
+    };
+  }, [officers]);
 
   return (
     <Modal open onClose={onClose} title="Teruskan Laporan">
@@ -479,11 +533,15 @@ function ForwardModal({
           <Label>Petugas</Label>
           <Select value={officerUid} onChange={(e) => setOfficerUid(e.target.value)} disabled={!unitId}>
             <option value="">Pilih petugas</option>
-            {officers.map((o) => (
-              <option key={o.uid} value={o.uid}>
-                {o.name}
-              </option>
-            ))}
+            {officers.map((o) => {
+              const activeCases = officerWorkloads[o.uid] ?? 0;
+              const readyLabel = activeCases === 0 ? "· Siap menerima" : `· Sedang menangani ${activeCases} kasus`;
+              return (
+                <option key={o.uid} value={o.uid}>
+                  {o.name}{readyLabel}
+                </option>
+              );
+            })}
           </Select>
         </div>
 

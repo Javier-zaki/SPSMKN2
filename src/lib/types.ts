@@ -167,6 +167,7 @@ export type SupportChatStatus = "menunggu_admin" | "diteruskan" | "selesai";
 
 export interface SupportChat {
   id: string;
+  complaintId?: string | null;
   studentUid: string;
   studentName: string;
   subject: string;

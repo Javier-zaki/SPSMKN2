@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   collection,
   onSnapshot,
@@ -21,6 +22,7 @@ type InboxRole = "siswa" | "admin" | "petugas";
 
 export function SupportInbox({ role }: { role: InboxRole }) {
   const { firebaseUser } = useAuth();
+  const searchParams = useSearchParams();
   const [chats, setChats] = useState<SupportChat[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
@@ -45,9 +47,14 @@ export function SupportInbox({ role }: { role: InboxRole }) {
     return onSnapshot(q, (snap) => {
       const next = snap.docs.map((d) => ({ ...d.data(), id: d.id } as SupportChat));
       setChats(next);
-      setSelectedId((current) => current && next.some((chat) => chat.id === current) ? current : next[0]?.id ?? null);
+      const targetId = searchParams.get("chatId");
+      setSelectedId((current) => {
+        if (targetId && next.some((chat) => chat.id === targetId)) return targetId;
+        if (current && next.some((chat) => chat.id === current)) return current;
+        return next[0]?.id ?? null;
+      });
     }, () => setError("Tidak dapat memuat daftar chat. Periksa aturan Firestore."));
-  }, [firebaseUser, role]);
+  }, [firebaseUser, role, searchParams]);
 
   useEffect(() => {
     if (!selectedId) {

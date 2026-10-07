@@ -57,7 +57,7 @@ export default function PetugasNotifikasiPage() {
     if (notification.complaintId) {
       router.push(`/petugas/tugas/${notification.complaintId}`);
     } else if (notification.supportChatId) {
-      router.push("/petugas/chat");
+      router.push(`/petugas/chat?chatId=${notification.supportChatId}`);
     }
   }
 

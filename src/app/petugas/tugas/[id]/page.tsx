@@ -37,6 +37,7 @@ export default function TugasDetailPage() {
   const [complaint, setComplaint] = useState<Complaint | null | "not-found">(null);
   const [history, setHistory] = useState<ComplaintHistoryEntry[]>([]);
   const [comments, setComments] = useState<ComplaintComment[]>([]);
+  const [internalChatId, setInternalChatId] = useState<string | null>(null);
 
   const [showComplete, setShowComplete] = useState(false);
   const [showReturn, setShowReturn] = useState(false);
@@ -65,6 +66,23 @@ export default function TugasDetailPage() {
       setComments(snap.docs.map((d) => ({ ...(d.data() as ComplaintComment), id: d.id })));
     });
   }, [id]);
+
+  useEffect(() => {
+    if (complaint === null || complaint === "not-found" || !complaint.currentOfficerId) {
+      setInternalChatId(null);
+      return;
+    }
+
+    const q = query(
+      collection(db, "support_chats"),
+      where("complaintId", "==", id),
+      where("assignedOfficerUid", "==", complaint.currentOfficerId)
+    );
+
+    return onSnapshot(q, (snap) => {
+      setInternalChatId(snap.docs[0]?.id ?? null);
+    });
+  }, [complaint, id]);
 
   if (complaint === null) return <p className="text-sm text-ink-muted">Memuat...</p>;
   if (complaint === "not-found") {
@@ -187,6 +205,12 @@ export default function TugasDetailPage() {
       {/* Actions */}
       <Card>
         <CardContent className="flex flex-wrap gap-2">
+          {internalChatId && (
+            <Button variant="secondary" onClick={() => router.push(`/petugas/chat?chatId=${internalChatId}`)}>
+              Chat dengan admin
+            </Button>
+          )}
+
           {complaint.status === "diteruskan" && (
             <Button
               disabled={busy}

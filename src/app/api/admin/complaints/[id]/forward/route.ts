@@ -56,6 +56,35 @@ export async function POST(
     const unitName = unitSnap.data()?.name as string;
     const officerName = officerSnap.data()?.name as string;
     const now = new Date().toISOString();
+    const adminProfileSnap = await adminDb.collection("users").doc(user.uid).get();
+    const adminName = String(adminProfileSnap.data()?.name ?? "Admin");
+
+    const internalChatRef = adminDb.collection("support_chats").doc();
+    const internalChatMessageRef = internalChatRef.collection("messages").doc();
+    const internalChatBatch = adminDb.batch();
+    internalChatBatch.set(internalChatRef, {
+      id: internalChatRef.id,
+      complaintId: params.id,
+      studentUid: user.uid,
+      studentName: adminName,
+      subject: `Internal: ${complaint.complaintNumber}`,
+      status: "diteruskan",
+      assignedUnitId: input.unitId,
+      assignedUnitName: unitName,
+      assignedOfficerUid: input.officerUid,
+      assignedOfficerName: officerName,
+      lastMessage: `Admin mengirim tugas untuk ${complaint.complaintNumber}.`,
+      createdAt: now,
+      updatedAt: now,
+    });
+    internalChatBatch.set(internalChatMessageRef, {
+      id: internalChatMessageRef.id,
+      authorUid: user.uid,
+      authorRole: "admin",
+      authorName: adminName,
+      message: `Laporan ${complaint.complaintNumber} diteruskan ke ${unitName} — ${officerName}. Instruksi: ${input.instruction}`,
+      createdAt: now,
+    });
 
     await complaintRef.collection("assignments").add({
       complaintId: params.id,
@@ -103,6 +132,7 @@ export async function POST(
       title: "Mendapat tugas baru",
       message: `Laporan ${complaint.complaintNumber} diteruskan kepada Anda: ${input.instruction}`,
       complaintId: params.id,
+      supportChatId: internalChatRef.id,
       isRead: false,
       createdAt: now,
     });
@@ -116,6 +146,8 @@ export async function POST(
       isRead: false,
       createdAt: now,
     });
+
+    await internalChatBatch.commit();
 
     await writeAuditLog({
       userId: user.uid,
