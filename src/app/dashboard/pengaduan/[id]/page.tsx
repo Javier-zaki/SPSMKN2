@@ -14,6 +14,7 @@ import { db } from "@/lib/firebase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, PriorityDot } from "@/components/ui/badge";
+import { ComplaintConversation } from "@/components/complaints/ComplaintConversation";
 import { PRIORITY_LABEL, STATUS_LABEL } from "@/lib/types";
 import { formatDateID, formatDateTimeShortID } from "@/lib/utils";
 import type {
@@ -129,6 +130,14 @@ export default function PengaduanDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <ComplaintConversation
+        complaintId={id}
+        complaintNumber={complaint.complaintNumber}
+        studentUid={complaint.studentUid}
+        currentOfficerId={complaint.currentOfficerId}
+        status={complaint.status}
+      />
 
       <Card>
         <CardContent>

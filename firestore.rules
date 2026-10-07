@@ -106,12 +106,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
-      // Internal realtime conversation between the admin and the currently
-      // assigned petugas. Message writes go through the authenticated API.
-      match /chat_messages/{messageId} {
+      // Conversation attached to the complaint and shared with its reporter.
+      // Keep this separate from staff-only chat_messages to protect internal discussion.
+      match /public_chat_messages/{messageId} {
+        function complaint() {
+          return get(/databases/$(database)/documents/complaints/$(complaintId)).data;
+        }
         allow read: if isAdmin() ||
-          (isPetugas() &&
-            get(/databases/$(database)/documents/complaints/$(complaintId)).data.currentOfficerId == request.auth.uid);
+          (isSiswa() && complaint().studentUid == request.auth.uid) ||
+          (isPetugas() && complaint().currentOfficerId == request.auth.uid);
         allow write: if false;
       }
 

@@ -141,15 +141,6 @@ export interface ComplaintComment {
   createdAt: string;
 }
 
-export interface ComplaintChatMessage {
-  id: string;
-  authorUid: string;
-  authorRole: "admin" | "petugas";
-  authorName: string;
-  message: string;
-  createdAt: string;
-}
-
 export interface EscalationRecord {
   id: string;
   complaintId: string;

@@ -4,11 +4,8 @@ import { adminDb } from "@/lib/firebase/admin";
 import { ApiAuthError, requireUser } from "@/lib/api/auth";
 import { enforceRateLimit } from "@/lib/api/rateLimit";
 
-const bodySchema = z.object({
-  message: z.string().trim().min(1).max(2000),
-});
-
-const CLOSED_STATUSES = ["selesai", "ditolak", "dikembalikan", "dieskalasikan"];
+const bodySchema = z.object({ message: z.string().trim().min(1).max(2000) });
+const CLOSED_STATUSES = ["selesai", "ditolak"];
 
 export async function POST(
   req: NextRequest,
@@ -16,8 +13,8 @@ export async function POST(
 ) {
   try {
     const user = await requireUser(req);
-    if (user.role !== "admin" && user.role !== "petugas") {
-      throw new ApiAuthError("Hanya admin dan petugas yang dapat mengirim pesan.", 403);
+    if (!user.role || !["siswa", "admin", "petugas"].includes(user.role)) {
+      throw new ApiAuthError("Tidak diizinkan.", 403);
     }
 
     const parsed = bodySchema.safeParse(await req.json());
@@ -35,17 +32,17 @@ export async function POST(
     }
     const complaint = complaintSnap.data()!;
 
-    if (user.role === "petugas" && complaint.currentOfficerId !== user.uid) {
-      throw new ApiAuthError("Chat ini hanya dapat diakses petugas yang ditugaskan.", 403);
-    }
-    if (!complaint.currentOfficerId) {
-      throw new ApiAuthError("Chat tersedia setelah laporan diteruskan ke petugas.", 409);
+    const isOwner = user.role === "siswa" && complaint.studentUid === user.uid;
+    const isAssignedOfficer =
+      user.role === "petugas" && complaint.currentOfficerId === user.uid;
+    if (user.role !== "admin" && !isOwner && !isAssignedOfficer) {
+      throw new ApiAuthError("Anda bukan peserta percakapan laporan ini.", 403);
     }
     if (CLOSED_STATUSES.includes(String(complaint.status))) {
-      throw new ApiAuthError("Chat laporan ini sudah ditutup untuk pesan baru.", 409);
+      throw new ApiAuthError("Percakapan laporan ini sudah ditutup.", 409);
     }
 
-    await enforceRateLimit(user.uid, "complaint_chat_message", 60, 3600);
+    await enforceRateLimit(user.uid, "complaint_public_chat_message", 60, 3600);
 
     const profileSnap = await adminDb.collection("users").doc(user.uid).get();
     const profile = profileSnap.data();
@@ -53,13 +50,20 @@ export async function POST(
       throw new ApiAuthError("Akun tidak aktif.", 403);
     }
 
-    const messageRef = complaintRef.collection("chat_messages").doc();
+    const messageRef = complaintRef.collection("public_chat_messages").doc();
     const createdAt = new Date().toISOString();
+    const authorName =
+      user.role === "siswa" && complaint.isAnonymous === true
+        ? "Pelapor (anonim)"
+        : String(
+            profile.name ??
+              (user.role === "admin" ? "Admin" : user.role === "petugas" ? "Petugas" : "Siswa")
+          );
     await messageRef.create({
       id: messageRef.id,
       authorUid: user.uid,
       authorRole: user.role,
-      authorName: String(profile.name ?? (user.role === "admin" ? "Admin" : "Petugas")),
+      authorName,
       message: parsed.data.message,
       createdAt,
     });
@@ -69,7 +73,7 @@ export async function POST(
     if (err instanceof ApiAuthError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
-    console.error("[POST /api/complaints/[id]/messages]", err);
+    console.error("[POST /api/complaints/[id]/public-messages]", err);
     return NextResponse.json({ error: "Pesan gagal dikirim." }, { status: 500 });
   }
 }

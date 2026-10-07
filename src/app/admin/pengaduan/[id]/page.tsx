@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea, Select } from "@/components/ui/form-fields";
 import { Modal } from "@/components/ui/dialog";
 import { StatusBadge, PriorityDot } from "@/components/ui/badge";
-import { ComplaintChat } from "@/components/complaints/ComplaintChat";
+import { ComplaintConversation } from "@/components/complaints/ComplaintConversation";
 import { PRIORITY_LABEL } from "@/lib/types";
 import { formatDateID, formatDateTimeShortID } from "@/lib/utils";
 import type {
@@ -222,14 +222,13 @@ export default function AdminComplaintDetailPage() {
         <p className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">{actionError}</p>
       )}
 
-      {complaint.currentOfficerId && (
-        <ComplaintChat
-          complaintId={id}
-          complaintNumber={complaint.complaintNumber}
-          currentOfficerId={complaint.currentOfficerId}
-          status={complaint.status}
-        />
-      )}
+      <ComplaintConversation
+        complaintId={id}
+        complaintNumber={complaint.complaintNumber}
+        studentUid={complaint.studentUid}
+        currentOfficerId={complaint.currentOfficerId}
+        status={complaint.status}
+      />
 
       <Card>
         <CardContent>
