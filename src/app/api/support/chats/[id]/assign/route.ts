@@ -9,6 +9,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   try {
     const user = await requireUser(req);
     requireRole(user, "admin");
+    const adminSnap = await adminDb.collection("users").doc(user.uid).get();
+    if (!adminSnap.exists || adminSnap.data()?.isActive !== true) {
+      throw new ApiAuthError("Akun tidak aktif.", 403);
+    }
     const parsed = bodySchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: "Pilih unit dan petugas." }, { status: 400 });
 
@@ -18,6 +22,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       adminDb.collection("users").doc(parsed.data.officerUid).get(),
     ]);
     if (!chatSnap.exists) return NextResponse.json({ error: "Chat tidak ditemukan." }, { status: 404 });
+    if (chatSnap.data()?.status === "selesai") {
+      throw new ApiAuthError("Chat sudah ditutup.", 409);
+    }
     if (!unitSnap.exists || unitSnap.data()?.isActive !== true) {
       return NextResponse.json({ error: "Unit tidak ditemukan atau nonaktif." }, { status: 400 });
     }

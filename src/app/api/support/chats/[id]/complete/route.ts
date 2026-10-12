@@ -8,10 +8,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (user.role !== "admin" && user.role !== "petugas") {
       throw new ApiAuthError("Hanya admin atau petugas yang dapat menutup chat.", 403);
     }
+    const profileSnap = await adminDb.collection("users").doc(user.uid).get();
+    if (!profileSnap.exists || profileSnap.data()?.isActive !== true) {
+      throw new ApiAuthError("Akun tidak aktif.", 403);
+    }
     const ref = adminDb.collection("support_chats").doc(params.id);
     const snap = await ref.get();
     if (!snap.exists) return NextResponse.json({ error: "Chat tidak ditemukan." }, { status: 404 });
     const chat = snap.data()!;
+    if (chat.status === "selesai") {
+      throw new ApiAuthError("Chat sudah ditutup.", 409);
+    }
     if (user.role === "petugas" && chat.assignedOfficerUid !== user.uid) {
       throw new ApiAuthError("Chat ini bukan tugas Anda.", 403);
     }

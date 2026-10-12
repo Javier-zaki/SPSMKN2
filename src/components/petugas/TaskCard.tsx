@@ -24,6 +24,12 @@ export function TaskCard({ c }: { c: Complaint }) {
             <p className="mt-1 truncate text-sm font-medium text-ink">{c.title}</p>
             <p className="mt-1 text-xs text-ink-muted">
               {c.categoryName} · {c.location}
+              {(() => {
+                const assignmentText = [c.currentUnitName, c.currentOfficerName]
+                  .filter(Boolean)
+                  .join(" — ");
+                return assignmentText ? ` · ${assignmentText}` : "";
+              })()}
             </p>
             {c.deadline && (
               <p className={`mt-1 text-xs ${overdue ? "font-medium text-danger" : "text-ink-muted"}`}>

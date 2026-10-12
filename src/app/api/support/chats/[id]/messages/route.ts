@@ -29,7 +29,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (chat.status === "selesai") throw new ApiAuthError("Chat sudah ditutup.", 409);
 
     const profileSnap = await adminDb.collection("users").doc(user.uid).get();
-    const authorName = String(profileSnap.data()?.name ?? (user.role === "admin" ? "Admin" : "Petugas"));
+    const profile = profileSnap.data();
+    if (!profileSnap.exists || profile?.isActive !== true) {
+      throw new ApiAuthError("Akun tidak aktif.", 403);
+    }
+    const authorName = String(profile.name ?? (user.role === "admin" ? "Admin" : user.role === "petugas" ? "Petugas" : "Siswa"));
     const now = new Date().toISOString();
     const messageRef = chatRef.collection("messages").doc();
     const batch = adminDb.batch();

@@ -80,29 +80,34 @@ export default function AdminComplaintsPage() {
         </Card>
       ) : (
         <div className="space-y-2">
-          {filtered.map((c) => (
-            <Link key={c.id} href={`/admin/pengaduan/${c.id}`}>
-              <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
-                <CardContent className="flex items-center justify-between gap-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <PriorityDot priority={c.priority} />
-                    <div className="min-w-0">
-                      <p className="font-display text-sm font-semibold text-ink">
-                        {c.complaintNumber}
-                      </p>
-                      <p className="truncate text-sm text-ink">{c.title}</p>
-                      <p className="text-xs text-ink-muted">
-                        {c.categoryName}
-                        {c.currentUnitName ? ` · ${c.currentUnitName}` : ""} ·{" "}
-                        {formatDateID(c.updatedAt)}
-                      </p>
+          {filtered.map((c) => {
+            const assignmentText = [c.currentUnitName, c.currentOfficerName]
+              .filter(Boolean)
+              .join(" — ");
+
+            return (
+              <Link key={c.id} href={`/admin/pengaduan/${c.id}`}>
+                <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
+                  <CardContent className="flex items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                      <PriorityDot priority={c.priority} />
+                      <div className="min-w-0">
+                        <p className="font-display text-sm font-semibold text-ink">
+                          {c.complaintNumber}
+                        </p>
+                        <p className="truncate text-sm text-ink">{c.title}</p>
+                        <p className="text-xs text-ink-muted">
+                          {c.categoryName}
+                          {assignmentText ? ` · ${assignmentText}` : ""} · {formatDateID(c.updatedAt)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <StatusBadge status={c.status} />
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <StatusBadge status={c.status} />
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

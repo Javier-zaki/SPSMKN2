@@ -58,29 +58,36 @@ export default function PengaduanSayaPage() {
 
   return (
     <div className="space-y-3">
-      {complaints.map((c) => (
-        <Link key={c.id} href={`/dashboard/pengaduan/${c.id}`}>
-          <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
-            <CardContent className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="font-display text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                    {c.complaintNumber}
-                  </span>
-                  <StatusBadge status={c.status} />
+      {complaints.map((c) => {
+        const assignmentText = [c.currentUnitName, c.currentOfficerName]
+          .filter(Boolean)
+          .join(" — ");
+
+        return (
+          <Link key={c.id} href={`/dashboard/pengaduan/${c.id}`}>
+            <Card className="transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-md">
+              <CardContent className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="font-display text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                      {c.complaintNumber}
+                    </span>
+                    <StatusBadge status={c.status} />
+                  </div>
+                  <p className="truncate text-sm font-semibold text-ink">
+                    {c.title}
+                  </p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    {c.categoryName} · {c.location}
+                    {assignmentText ? ` · ${assignmentText}` : ""}
+                  </p>
                 </div>
-                <p className="truncate text-sm font-semibold text-ink">
-                  {c.title}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-muted">
-                  {c.categoryName} · {c.location}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-ink-muted" />
-            </CardContent>
-          </Card>
-        </Link>
-      ))}
+                <ChevronRight className="h-4 w-4 shrink-0 text-ink-muted" />
+              </CardContent>
+            </Card>
+          </Link>
+        );
+      })}
     </div>
   );
 }
