@@ -59,12 +59,14 @@ export function SupportInbox({ role }: { role: InboxRole }) {
     if (!firebaseUser) return;
     const chatsRef = collection(db, "support_chats");
     const q = role === "siswa"
-      ? query(chatsRef, where("studentUid", "==", firebaseUser.uid), orderBy("updatedAt", "desc"))
+      ? query(chatsRef, where("studentUid", "==", firebaseUser.uid))
       : role === "petugas"
-        ? query(chatsRef, where("assignedOfficerUid", "==", firebaseUser.uid), orderBy("updatedAt", "desc"))
-        : query(chatsRef, orderBy("updatedAt", "desc"));
+        ? query(chatsRef, where("assignedOfficerUid", "==", firebaseUser.uid))
+        : query(chatsRef);
     return onSnapshot(q, (snap) => {
-      const next = snap.docs.map((d) => ({ ...d.data(), id: d.id } as SupportChat));
+      const next = snap.docs
+        .map((d) => ({ ...d.data(), id: d.id } as SupportChat))
+        .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
       setChats(next);
       const targetId = searchParams.get("chatId");
       setSelectedId((current) => {
@@ -72,7 +74,10 @@ export function SupportInbox({ role }: { role: InboxRole }) {
         if (current && next.some((chat) => chat.id === current)) return current;
         return next[0]?.id ?? null;
       });
-    }, () => setError("Tidak dapat memuat daftar chat. Periksa aturan Firestore."));
+    }, (loadError) => {
+      console.error("[SupportInbox] Failed to load chat list", loadError);
+      setError(`Tidak dapat memuat daftar chat (${loadError.code}). Periksa izin Firestore atau konfigurasi Firebase.`);
+    });
   }, [firebaseUser, role, searchParams]);
 
   useEffect(() => {
@@ -217,11 +222,16 @@ export function SupportInbox({ role }: { role: InboxRole }) {
             ) : chats.map((chat) => (
               <button key={chat.id} onClick={() => setSelectedId(chat.id)} className={`focus-ring w-full border-b border-border p-4 text-left transition-colors ${selectedId === chat.id ? "bg-brand-soft" : "hover:bg-bg"}`}>
                 <div className="flex items-start justify-between gap-2">
-                  <p className="truncate text-sm font-semibold text-ink">{role === "siswa" ? chat.subject : chat.studentName}</p>
+                  <p className="truncate text-sm font-semibold text-ink">
+                    {role === "siswa" ? chat.subject : chat.studentName}
+                  </p>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${chat.status === "selesai" ? "bg-status-selesai-bg text-status-selesai" : chat.status === "diteruskan" ? "bg-status-diteruskan-bg text-status-diteruskan" : "bg-status-diajukan-bg text-ink-muted"}`}>
-                    {chat.status === "menunggu_admin" ? "Menunggu admin" : chat.status === "diteruskan" ? "Diteruskan" : "Selesai"}
+                    {chat.status === "menunggu_admin" ? "Menunggu admin" : chat.status === "diteruskan" ? (chat.conversationType === "officer" ? "Dengan petugas" : "Diteruskan") : "Selesai"}
                   </span>
                 </div>
+                <p className="mt-1 text-[10px] font-medium uppercase tracking-wide text-brand-strong">
+                  {chat.conversationType === "officer" ? "Percakapan dengan petugas" : "Customer Service · Admin"}
+                </p>
                 <p className="mt-1 truncate text-xs text-ink-muted">{chat.lastMessage}</p>
                 <p className="mt-2 text-[11px] text-ink-muted">{formatDateTimeShortID(chat.updatedAt)}</p>
               </button>
@@ -245,21 +255,24 @@ export function SupportInbox({ role }: { role: InboxRole }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold sm:text-base">{role === "siswa" ? selected.subject : selected.studentName}</p>
                 <p className="mt-0.5 truncate text-xs text-white/75">
-                  {role !== "siswa" && selected.subject}
-                  {selected.assignedUnitName ? ` · ${selected.assignedUnitName}${selected.assignedOfficerName ? ` — ${selected.assignedOfficerName}` : ""}` : " · Menunggu admin"}
+                  {selected.conversationType === "officer"
+                    ? `${selected.assignedUnitName ?? "Unit"} · ${selected.assignedOfficerName ?? "Petugas"}`
+                    : selected.forwardedChatId
+                      ? `Customer Service · Diteruskan ke ${selected.assignedUnitName ?? "unit"} — ${selected.assignedOfficerName ?? "petugas"}`
+                      : role !== "siswa" ? `${selected.subject} · Menunggu admin` : "Customer Service · Admin"}
                 </p>
               </div>
               <div className="hidden shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/90 sm:flex">
                 <span className={`h-2 w-2 rounded-full ${selected.status === "selesai" ? "bg-white/50" : "bg-emerald-300"}`} />
                 {selected.status === "selesai" ? "Selesai" : "Realtime"}
               </div>
-              {role !== "siswa" && selected.status !== "selesai" && (
+              {role !== "siswa" && selected.status !== "selesai" && !(role === "admin" && selected.conversationType === "officer") && (
                 <Button variant="secondary" size="sm" disabled={busy} onClick={completeChat} className="shrink-0">
                   <CheckCheck className="h-4 w-4" /> <span className="hidden sm:inline">Tandai selesai</span>
                 </Button>
               )}
             </header>
-            {role === "admin" && selected.status !== "selesai" && (
+            {role === "admin" && selected.status !== "selesai" && selected.conversationType !== "officer" && !selected.forwardedChatId && (
               <div className="flex flex-col gap-2 border-b border-border bg-surface p-3 sm:flex-row sm:px-4">
                 <select value={unitId} onChange={(e) => { setUnitId(e.target.value); setOfficerUid(""); }} aria-label="Pilih unit" className="focus-ring min-h-10 flex-1 rounded-xl border border-border bg-surface px-3 text-sm text-ink">
                   <option value="">Pilih unit...</option>
@@ -270,6 +283,18 @@ export function SupportInbox({ role }: { role: InboxRole }) {
                   {eligibleOfficers.map((officer) => <option key={officer.uid} value={officer.uid}>{officer.name}</option>)}
                 </select>
                 <Button size="sm" disabled={busy || !officerUid} onClick={assignChat}>{busy ? "Memproses..." : "Teruskan"}</Button>
+              </div>
+            )}
+            {selected.forwardedChatId && (
+              <div className="flex flex-col gap-2 border-b border-border bg-brand-soft px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-ink-muted">
+                  {role === "admin"
+                    ? `Chat terpisah dengan ${selected.assignedOfficerName ?? "petugas"} sudah dibuat. Admin hanya dapat memantau.`
+                    : `Percakapan sudah diteruskan kepada ${selected.assignedOfficerName ?? "petugas"}. Lanjutkan chat di kontak terpisah.`}
+                </p>
+                <Button size="sm" variant="secondary" onClick={() => setSelectedId(selected.forwardedChatId!)}>
+                  {role === "admin" ? "Pantau chat petugas" : "Buka chat petugas"}
+                </Button>
               </div>
             )}
             <div
@@ -335,8 +360,13 @@ export function SupportInbox({ role }: { role: InboxRole }) {
                   )}
                 </div>
               )}
+              {selected.conversationType === "officer" && selected.handoffNote && (
+                <p className="mx-auto my-4 w-fit rounded-lg bg-white/85 px-3 py-1.5 text-center text-[11px] text-ink-muted shadow-sm">
+                  {selected.handoffNote}{role === "admin" ? " Admin hanya dapat memantau percakapan." : ""}
+                </p>
+              )}
             </div>
-            {selected.status !== "selesai" && (
+            {selected.status !== "selesai" && !selected.forwardedChatId && !(role === "admin" && selected.conversationType === "officer") && (
               <form onSubmit={sendMessage} className="flex items-end gap-2 border-t border-border bg-[#f0f2f5] px-3 py-3 sm:px-4">
                 <div className="flex min-h-11 flex-1 items-end rounded-2xl bg-white px-3 py-2 shadow-sm">
                   <textarea

@@ -167,6 +167,10 @@ export type SupportChatStatus = "menunggu_admin" | "diteruskan" | "selesai";
 
 export interface SupportChat {
   id: string;
+  conversationType?: "customer_service" | "officer";
+  parentChatId?: string | null;
+  forwardedChatId?: string | null;
+  handoffNote?: string | null;
   complaintId?: string | null;
   studentUid: string;
   studentName: string;

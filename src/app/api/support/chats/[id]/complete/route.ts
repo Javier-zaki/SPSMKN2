@@ -22,6 +22,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (user.role === "petugas" && chat.assignedOfficerUid !== user.uid) {
       throw new ApiAuthError("Chat ini bukan tugas Anda.", 403);
     }
+    if (user.role === "admin" && chat.conversationType === "officer") {
+      throw new ApiAuthError("Admin hanya dapat memantau chat yang diteruskan.", 403);
+    }
     const now = new Date().toISOString();
     const batch = adminDb.batch();
     batch.update(ref, { status: "selesai", updatedAt: now });

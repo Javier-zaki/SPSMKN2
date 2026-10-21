@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
     const batch = adminDb.batch();
     batch.set(chatRef, {
       id: chatRef.id,
+      conversationType: "customer_service",
+      forwardedChatId: null,
       studentUid: user.uid,
       studentName: String(profile.name ?? "Siswa"),
       subject: parsed.data.subject,

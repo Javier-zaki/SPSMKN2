@@ -22,11 +22,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const chatSnap = await chatRef.get();
     if (!chatSnap.exists) return NextResponse.json({ error: "Chat tidak ditemukan." }, { status: 404 });
     const chat = chatSnap.data()!;
-    const allowed = user.role === "admin" ||
-      (user.role === "siswa" && chat.studentUid === user.uid) ||
-      (user.role === "petugas" && chat.assignedOfficerUid === user.uid);
+    const isOfficerConversation = chat.conversationType === "officer";
+    const allowed = isOfficerConversation
+      ? ((user.role === "siswa" && chat.studentUid === user.uid) ||
+        (user.role === "petugas" && chat.assignedOfficerUid === user.uid))
+      : (user.role === "admin" ||
+        (user.role === "siswa" && chat.studentUid === user.uid) ||
+        (user.role === "petugas" && chat.assignedOfficerUid === user.uid));
     if (!allowed) throw new ApiAuthError("Anda bukan peserta chat ini.", 403);
     if (chat.status === "selesai") throw new ApiAuthError("Chat sudah ditutup.", 409);
+    if (chat.forwardedChatId && chat.conversationType !== "officer") {
+      throw new ApiAuthError("Chat ini sudah diteruskan. Lanjutkan percakapan di chat petugas.", 409);
+    }
 
     const profileSnap = await adminDb.collection("users").doc(user.uid).get();
     const profile = profileSnap.data();
@@ -48,7 +55,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     batch.update(chatRef, { lastMessage: parsed.data.message, updatedAt: now });
 
     let recipients: { uid: string; role: string }[];
-    if (user.role === "siswa") {
+    if (isOfficerConversation && user.role === "petugas") {
+      recipients = [{ uid: String(chat.studentUid), role: "siswa" }];
+    } else if (isOfficerConversation && user.role === "siswa") {
+      recipients = [{ uid: String(chat.assignedOfficerUid), role: "petugas" }];
+    } else if (user.role === "siswa") {
       if (chat.assignedOfficerUid) {
         recipients = [{ uid: String(chat.assignedOfficerUid), role: "petugas" }];
       } else {

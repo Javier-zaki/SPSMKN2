@@ -148,9 +148,9 @@ export function ComplaintConversation({
           {userRole === "admin" ? <ShieldCheck className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold sm:text-base">Chat pengaduan</h3>
+          <h3 className="truncate text-sm font-semibold sm:text-base">Customer Service</h3>
           <p className="mt-0.5 truncate text-xs text-white/75">
-            {complaintNumber} · Pelapor{currentOfficerId ? " · Petugas menangani" : " · Menunggu petugas"}
+            Laporan {complaintNumber} · Pelapor{currentOfficerId ? " · Petugas menangani" : " · Menunggu petugas"}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white/90">
@@ -177,8 +177,8 @@ export function ComplaintConversation({
               <MessageCircle className="h-7 w-7" />
             </span>
             <p className="rounded-xl bg-[#fff8c6]/90 px-4 py-2 text-xs text-ink-muted shadow-sm">
-              Percakapan ini khusus untuk pengaduan {complaintNumber}.
-              <br />Mulai dengan mengirim pesan.
+              Chat ini terhubung langsung dengan laporan {complaintNumber}.
+              <br />Kirim pesan untuk menghubungi petugas/admin secara realtime.
             </p>
           </div>
         ) : (

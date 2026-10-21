@@ -22,8 +22,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       adminDb.collection("users").doc(parsed.data.officerUid).get(),
     ]);
     if (!chatSnap.exists) return NextResponse.json({ error: "Chat tidak ditemukan." }, { status: 404 });
-    if (chatSnap.data()?.status === "selesai") {
+    const sourceChat = chatSnap.data()!;
+    if (sourceChat.status === "selesai") {
       throw new ApiAuthError("Chat sudah ditutup.", 409);
+    }
+    if (sourceChat.conversationType === "officer") {
+      throw new ApiAuthError("Chat petugas tidak dapat diteruskan dari sini.", 409);
+    }
+    if (sourceChat.forwardedChatId) {
+      throw new ApiAuthError("Chat ini sudah diteruskan ke petugas.", 409);
     }
     if (!unitSnap.exists || unitSnap.data()?.isActive !== true) {
       return NextResponse.json({ error: "Unit tidak ditemukan atau nonaktif." }, { status: 400 });
@@ -37,17 +44,36 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const unitName = String(unitSnap.data()?.name ?? "Unit");
     const officerName = String(officer.name ?? "Petugas");
     const batch = adminDb.batch();
-    batch.update(chatSnap.ref, {
+    const forwardedChatRef = adminDb.collection("support_chats").doc();
+    const studentSnap = await adminDb.collection("users").doc(String(sourceChat.studentUid)).get();
+    const studentName = String(studentSnap.data()?.name ?? sourceChat.studentName ?? "Siswa");
+    const handoffNote = `Chat “${sourceChat.subject}” diteruskan oleh admin kepada ${unitName} — ${officerName}.`;
+
+    batch.set(forwardedChatRef, {
+      id: forwardedChatRef.id,
+      conversationType: "officer",
+      parentChatId: params.id,
+      handoffNote,
+      studentUid: sourceChat.studentUid,
+      studentName,
+      subject: sourceChat.subject,
       status: "diteruskan",
       assignedUnitId: parsed.data.unitId,
       assignedUnitName: unitName,
       assignedOfficerUid: parsed.data.officerUid,
       assignedOfficerName: officerName,
+      lastMessage: handoffNote,
+      createdAt: now,
+      updatedAt: now,
+    });
+    batch.update(chatSnap.ref, {
+      status: "diteruskan",
+      forwardedChatId: forwardedChatRef.id,
       updatedAt: now,
     });
     for (const recipient of [
-      { uid: parsed.data.officerUid, role: "petugas", title: "Chat bantuan diteruskan", message: `Chat “${chatSnap.data()?.subject}” ditugaskan kepada Anda.` },
-      { uid: String(chatSnap.data()?.studentUid), role: "siswa", title: "Chat diteruskan ke petugas", message: `Chat bantuanmu diteruskan ke ${unitName} — ${officerName}.` },
+      { uid: parsed.data.officerUid, role: "petugas", title: "Chat bantuan diteruskan", message: `Chat “${sourceChat.subject}” ditugaskan kepada Anda.` },
+      { uid: String(sourceChat.studentUid), role: "siswa", title: "Chat diteruskan ke petugas", message: `Chat bantuanmu diteruskan ke ${unitName} — ${officerName}.` },
     ]) {
       batch.set(adminDb.collection("notifications").doc(), {
         userId: recipient.uid,
@@ -55,7 +81,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         title: recipient.title,
         message: recipient.message,
         complaintId: null,
-        supportChatId: params.id,
+        supportChatId: forwardedChatRef.id,
         isRead: false,
         createdAt: now,
       });
